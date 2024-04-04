@@ -1,6 +1,6 @@
 # Software Systems Development Labs Repository
 
-This repository contains my laboratory works for the course "Software Systems Development." Each lab focuses on different aspects of software development, ranging from multiprocessing to network programming and web development. Below is a brief overview of each lab:
+This repository contains my laboratory works for the course "Software Systems Development", taught in the 6th semester of the Computer Science and Computer Engineering program at the Bauman Moscow State Technical University.
 
 ## Laboratories:
 
