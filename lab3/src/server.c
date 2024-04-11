@@ -39,14 +39,12 @@ int setupServerSocket(int port);
 void handleClientActivity(int sd, ClientData *client_data,
                           struct sockaddr_in address);
 
-#include <stdio.h>
-
-void readData(const char *filename, int *seed, int *port, GameData *gameData) {
+int readData(const char *filename, int *seed, int *port, GameData *gameData) {
   FILE *file = fopen(filename, "r");
   if (file == NULL) {
-    return;
+    printf("File not found\n");
+    return -1;
   }
-  // TODO: Check data
   fscanf(file, "%d", seed);
   fscanf(file, "%d", port);
   fscanf(file, "%d", &gameData->minattempts);
@@ -56,7 +54,23 @@ void readData(const char *filename, int *seed, int *port, GameData *gameData) {
   fscanf(file, "%d", &gameData->minfin);
   fscanf(file, "%d", &gameData->maxfin);
 
+
   fclose(file);
+  if(*port < 1024 || *port > 65535){
+    printf("Port must be in range 1024-65535\n");
+    return -1;
+  }
+
+  if(gameData->minattempts < 1 || gameData->maxattempts < 1 || gameData->mininit < 1 || gameData->maxinit < 1 || gameData->minfin < 1 || gameData->maxfin < 1){
+    printf("All values must be greater than 0\n");
+    return -1;
+  }
+
+  if(gameData->minattempts > gameData->maxattempts || gameData->mininit > gameData->maxinit || gameData->minfin > gameData->maxfin){
+    printf("Min values must be less than max values\n");
+    return -1;
+  }
+  return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -72,7 +86,10 @@ int main(int argc, char *argv[]) {
   if (argc != 2) {
     printf("You can use with config file: %s <path/to/conffile.txt>\n", argv[0]);
   }else{
-    readData(argv[1], &seed, &port, &gameData);
+    int result = readData(argv[1], &seed, &port, &gameData);
+    if(result == -1){
+      return -1;
+    }
   }
   
 
@@ -90,10 +107,10 @@ int main(int argc, char *argv[]) {
 
   initializeClientData(client_data, 0, client_capacity);
 
-  server_fd = setupServerSocket(PORT);
+  server_fd = setupServerSocket(port);
   fcntl(server_fd, F_SETFL, O_NONBLOCK);
 
-  printf("Listener on port %d \n", PORT);
+  printf("Listener on port %d \n", port);
 
   while (1) {
     FD_ZERO(&readfds);
@@ -183,7 +200,7 @@ int acceptNewClient(int server_fd, struct sockaddr_in address,
     return -1;
   }
 
-  int added = 0;
+  int added = -1;
   for (int i = 0; i < *client_capacity; i++) {
     printf("Comparing %s with %s\n", (*client_data)[i].name, name);
     if (strcmp((*client_data)[i].name, name) == 0) {
@@ -203,12 +220,12 @@ int acceptNewClient(int server_fd, struct sockaddr_in address,
       (*client_data)[i].secretNumber = (*client_data)[i].min + rand() % ((*client_data)[i].max - (*client_data)[i].min + 1);
       strncpy((*client_data)[i].name, name, valread);
       printf("Adding to list of sockets as %d with secret number %d, range: %d - %d\n", i, (*client_data)[i].secretNumber, (*client_data)[i].min, (*client_data)[i].max);
-      added = 1;
+      added = i;
       break;
     }
   }
 
-  if (!added) {
+  if (added == -1) {
     *client_capacity *= 2;
     *client_data = (ClientData *)realloc(*client_data,
                                          *client_capacity * sizeof(ClientData));
@@ -222,13 +239,14 @@ int acceptNewClient(int server_fd, struct sockaddr_in address,
       strncpy((*client_data)[i].name, name, valread);
       printf("Resized client data to %d\n", *client_capacity);
       printf("Adding to list of sockets as %d with secret number %d, range: %d - %d\n", i, (*client_data)[i].secretNumber, (*client_data)[i].min, (*client_data)[i].max);
+      added = i;
   }
 
-  // message - min and max to user
   char *message = (char *)malloc(BUFFER_SIZE);
-  sprintf(message, "h %d %d %d", (*client_data)[*client_capacity - 1].min, (*client_data)[*client_capacity - 1].max, (*client_data)[*client_capacity - 1].attempts);
+  sprintf(message, "h %d %d %d", (*client_data)[added].min, (*client_data)[added].max, (*client_data)[added].attempts);
   send(new_socket, message, strlen(message), 0);
-  printf("User accepted\n");
+  printf("User accepted, send message: %s, %d, %d\n", message, *client_capacity - 1, added);
+  free(message);
 
   return new_socket;
 }
