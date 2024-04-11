@@ -143,10 +143,46 @@ int acceptNewClient(int server_fd, struct sockaddr_in address,
 
   printf("New connection, socket fd is %d, ip is : %s, port : %d \n",
          new_socket, inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+
   fcntl(new_socket, F_SETFL, O_NONBLOCK);
-  char name[BUFFER_SIZE];
-  int valread = read(new_socket, name, BUFFER_SIZE - 1);
-  name[valread] = '\0';
+
+  fd_set readfds;
+  struct timeval tv;
+  int retval, valread;
+  char name[BUFFER_SIZE] = {0};
+
+  FD_ZERO(&readfds);
+  FD_SET(new_socket, &readfds);
+
+  tv.tv_sec = 5;  
+  tv.tv_usec = 0;
+
+  retval = select(new_socket + 1, &readfds, NULL, NULL, &tv);
+
+  if (retval == -1) {
+    perror("select()");
+    close(new_socket);
+    return -1;
+  } else if (retval) {
+    valread = read(new_socket, name, BUFFER_SIZE - 1);
+    if (valread > 0) {
+      name[valread] = '\0';
+      printf("Valread: %d, Name: %s\n", valread, name);
+    } else {
+      if (valread == 0) {
+        printf("Connection closed\n");
+      } else {
+        perror("read");
+      }
+      close(new_socket);
+      return -1;
+    }
+  } else {
+    printf("No data within the timeout period.\n");
+    close(new_socket);
+    return -1;
+  }
+
   int added = 0;
   for (int i = 0; i < *client_capacity; i++) {
     printf("Comparing %s with %s\n", (*client_data)[i].name, name);

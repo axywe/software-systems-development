@@ -27,7 +27,6 @@ int main(int argc, char *argv[]) {
       port = atoi(argv[i + 1]);
     } else if (strcmp(argv[i], "-n") == 0) {
       name = argv[i + 1];
-      name[strlen(name)] = '\0';
     }
   }
 
@@ -68,7 +67,7 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  send(sock, name, strlen(name), 0);
+  send(sock, name, strlen(name)+1, 0);
   valread = read(sock, buffer, BUFFER_SIZE);
   int min, max, attempts;
   if (valread == 0) {
