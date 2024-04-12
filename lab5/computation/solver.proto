@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package solver;
+
+option go_package = "../computation"; 
+
+service Solver {
+  rpc SolveEquation (EquationRequest) returns (EquationResponse) {}
+}
+
+message EquationRequest {
+  int32 size = 1;
+  repeated double matrix = 2;
+  repeated double constants = 3;
+}
+
+message EquationResponse {
+  repeated double solution = 1;
+  string error = 2;
+}
