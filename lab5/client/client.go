@@ -18,6 +18,7 @@ type Server struct {
 }
 
 func (s *Server) serveForm(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `
 		<!DOCTYPE html>
 		<html>
@@ -114,59 +115,10 @@ func (s *Server) serveForm(w http.ResponseWriter, r *http.Request) {
 	`)
 }
 
-func (s *Server) solveEquation(w http.ResponseWriter, r *http.Request) {
-	if r.Method != "POST" {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
-		return
-	}
-
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadRequest)
-		return
-	}
-
-	sizeStr := r.FormValue("size")
-	size, err := strconv.Atoi(sizeStr)
-	if err != nil || size < 1 {
-		http.Error(w, "Invalid matrix size", http.StatusBadRequest)
-		return
-	}
-
-	matrix := make([]float64, size*size)
-	constants := make([]float64, size)
-
-	for i := 0; i < size; i++ {
-		for j := 0; j < size; j++ {
-			mVal, err := strconv.ParseFloat(r.FormValue(fmt.Sprintf("m%d_%d", i, j)), 64)
-			if err != nil {
-				http.Error(w, "Invalid matrix values", http.StatusBadRequest)
-				return
-			}
-			matrix[i*size+j] = mVal
-		}
-		cVal, err := strconv.ParseFloat(r.FormValue(fmt.Sprintf("c%d", i)), 64)
-		if err != nil {
-			http.Error(w, "Invalid constants values", http.StatusBadRequest)
-			return
-		}
-		constants[i] = cVal
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	res, err := s.solverClient.SolveEquation(ctx, &pb.EquationRequest{
-		Size:      int32(size),
-		Matrix:    matrix,
-		Constants: constants,
-	})
-	if err != nil {
-		http.Error(w, "Failed to solve equation: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	fmt.Fprintf(w, `<!DOCTYPE html>
+func (s *Server) serveSolution(w http.ResponseWriter, msg string, status int) {
+	w.WriteHeader(status)
+	fmt.Fprintf(w, `
+		<!DOCTYPE html>
 	<html>
 	<head>
 		<title>Solution</title>
@@ -202,12 +154,74 @@ func (s *Server) solveEquation(w http.ResponseWriter, r *http.Request) {
 	</head>
 	<body>
 		<div id="solution">
-			<h2>Solution: %v</h2>
+			<h2>%v</h2>
 			<a onclick="window.history.back();">Back</a>
 		</div>
 	</body>
 	</html>
-	`, res.GetSolution())
+	`, msg)
+}
+
+func (s *Server) solveEquation(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+
+	err := r.ParseForm()
+	if err != nil {
+		s.serveSolution(w, "Error: Error parsing form", http.StatusBadRequest)
+		return
+	}
+
+	sizeStr := r.FormValue("size")
+	size, err := strconv.Atoi(sizeStr)
+	if err != nil || size < 1 {
+		s.serveSolution(w, "Error: Invalid matrix size", http.StatusBadRequest)
+		return
+	}
+
+	matrix := make([]float64, size*size)
+	constants := make([]float64, size)
+
+	for i := 0; i < size; i++ {
+		for j := 0; j < size; j++ {
+			mVal, err := strconv.ParseFloat(r.FormValue(fmt.Sprintf("m%d_%d", i, j)), 64)
+			if err != nil {
+				s.serveSolution(w, "Error: Invalid matrix values", http.StatusBadRequest)
+				return
+			}
+			matrix[i*size+j] = mVal
+		}
+		cVal, err := strconv.ParseFloat(r.FormValue(fmt.Sprintf("c%d", i)), 64)
+		if err != nil {
+			s.serveSolution(w, "Error: Invalid constants values", http.StatusBadRequest)
+			return
+		}
+		constants[i] = cVal
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	res, err := s.solverClient.SolveEquation(ctx, &pb.EquationRequest{
+		Size:      int32(size),
+		Matrix:    matrix,
+		Constants: constants,
+	})
+	if err != nil {
+		s.serveSolution(w, "Error connecting to server", http.StatusInternalServerError)
+		return
+	}
+
+	if res.Error != "" {
+		s.serveSolution(w, fmt.Sprintf("Solver error: %v\n", res.Error), http.StatusBadRequest)
+		return
+	}
+
+	resultString := fmt.Sprintf("Solution: %v", res.GetSolution())
+	res.GetSolution()
+	s.serveSolution(w, resultString, http.StatusOK)
 }
 
 func main() {

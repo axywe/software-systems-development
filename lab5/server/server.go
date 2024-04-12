@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"math"
 	"net"
 
-	pb "solver/computation" 
+	pb "solver/computation"
 
 	"google.golang.org/grpc"
 )
@@ -17,19 +18,29 @@ type server struct {
 }
 
 func solveLinearSystem(size int, matrix, constants []float64) ([]float64, error) {
+	if len(matrix) != size*size || len(constants) != size {
+		return nil, errors.New("invalid input dimensions")
+	}
+
 	for i := 0; i < size; i++ {
+		maxEl := math.Abs(matrix[i*size+i])
 		maxRow := i
 		for k := i + 1; k < size; k++ {
-			if abs(matrix[k*size+i]) > abs(matrix[maxRow*size+i]) {
+			if math.Abs(matrix[k*size+i]) > maxEl {
+				maxEl = math.Abs(matrix[k*size+i])
 				maxRow = k
 			}
 		}
 
-		if i != maxRow {
+		if maxEl == 0 {
+			return nil, errors.New("matrix is singular")
+		}
+
+		if maxRow != i {
 			for k := i; k < size; k++ {
-				matrix[i*size+k], matrix[maxRow*size+k] = matrix[maxRow*size+k], matrix[i*size+k]
+				matrix[maxRow*size+k], matrix[i*size+k] = matrix[i*size+k], matrix[maxRow*size+k]
 			}
-			constants[i], constants[maxRow] = constants[maxRow], constants[i]
+			constants[maxRow], constants[i] = constants[i], constants[maxRow]
 		}
 
 		for k := i + 1; k < size; k++ {
@@ -45,31 +56,21 @@ func solveLinearSystem(size int, matrix, constants []float64) ([]float64, error)
 		}
 	}
 
-	for i := size - 1; i >= 0; i-- {
-		if matrix[i*size+i] == 0 && constants[i] != 0 {
-			return nil, fmt.Errorf("no solution")
-		}
-	}
-
 	solution := make([]float64, size)
 	for i := size - 1; i >= 0; i-- {
-		sum := constants[i]
-		for j := i + 1; j < size; j++ {
-			sum -= matrix[i*size+j] * solution[j]
+		solution[i] = math.Round(constants[i]/matrix[i*size+i]*1e12) / 1e12
+		for k := i - 1; k >= 0; k-- {
+			constants[k] -= matrix[k*size+i] * solution[i]
 		}
-		solution[i] = math.Round(sum/matrix[i*size+i]*1e12) / 1e12
 	}
 
+	for i := 0; i < size; i++ {
+		if math.Abs(matrix[i*size+i]) < 1e-10 {
+			return nil, errors.New("matrix is singular")
+		}
+	}
 	log.Printf("Solution: %v\n", solution)
-
 	return solution, nil
-}
-
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
 }
 
 func (s *server) SolveEquation(ctx context.Context, req *pb.EquationRequest) (*pb.EquationResponse, error) {
