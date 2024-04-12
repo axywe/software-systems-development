@@ -15,7 +15,7 @@ This project provides a simple web-based interface to solve systems of linear eq
 
 ## Requirements
 
-- Go (version 1.15 or later recommended)
+- Go (version 1.21.2 or later)
 - Protocol Buffers Compiler (protoc)
 - gRPC
 
