@@ -440,14 +440,25 @@ int readData(const char *filename, int *seed, int *port, GameData *gameData) {
     printf("File not found\n");
     return -1;
   }
-  fscanf(file, "%d", seed);
-  fscanf(file, "%d", port);
-  fscanf(file, "%d", &gameData->minattempts);
-  fscanf(file, "%d", &gameData->maxattempts);
-  fscanf(file, "%d", &gameData->mininit);
-  fscanf(file, "%d", &gameData->maxinit);
-  fscanf(file, "%d", &gameData->minfin);
-  fscanf(file, "%d", &gameData->maxfin);
+  if (fscanf(file, "%d", seed) != 1 ||
+      fscanf(file, "%d", port) != 1 ||
+      fscanf(file, "%d", &gameData->minattempts) != 1 ||
+      fscanf(file, "%d", &gameData->maxattempts) != 1 ||
+      fscanf(file, "%d", &gameData->mininit) != 1 ||
+      fscanf(file, "%d", &gameData->maxinit) != 1 ||
+      fscanf(file, "%d", &gameData->minfin) != 1 ||
+      fscanf(file, "%d", &gameData->maxfin) != 1) {
+    printf("Error reading data. Ensure all 8 integers are present.\n");
+    fclose(file);
+    return -1;
+  }
+
+  char buffer;
+  if (fscanf(file, "%c", &buffer) != EOF && buffer != '\n' && buffer != ' ') {
+    printf("Extraneous data detected in file.\n");
+    fclose(file);
+    return -1;
+  }
 
   fclose(file);
   if (*port < 1024 || *port > 65535) {
