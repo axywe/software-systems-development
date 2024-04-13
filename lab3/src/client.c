@@ -29,61 +29,14 @@
  * @return True if arguments are valid, false otherwise.
  */
 bool parse_and_validate_args(int argc, char *argv[], char **host, int *port,
-                             char **name) {
-  for (int i = 1; i < argc; i++) {
-    if (strcmp(argv[i], "-h") == 0) {
-      *host = argv[i + 1];
-    } else if (strcmp(argv[i], "-p") == 0) {
-      *port = atoi(argv[i + 1]);
-    } else if (strcmp(argv[i], "-n") == 0) {
-      *name = argv[i + 1];
-    }
-  }
-
-  if (*host == NULL) *host = "127.0.0.1";
-  if (*port == 0) *port = PORT;
-  if (*name == NULL) {
-    printf("Usage: %s -h <host> -p <port> -n <name>\n", argv[0]);
-    return false;
-  }
-  if (*port < 1024 || *port > 65535) {
-    printf("Port must be in range 1024-65535\n");
-    return false;
-  }
-  if (strlen(*name) > 255) {
-    printf("Name must be less than 255 characters\n");
-    return false;
-  }
-
-  return true;
-}
+                             char **name);
 
 /**
  * @brief Parses the client's textual input into game-specific commands.
  * @param input User's textual input string.
  * @return A string containing a game command or error indicator.
  */
-char *parse_client_input(const char *input) {
-  static char command[100];
-  int number;
-  char checkChar;
-
-  if (sscanf(input, "greater than %d%c", &number, &checkChar) == 1) {
-    sprintf(command, "g %d", number);
-  } else if (sscanf(input, "less than %d%c", &number, &checkChar) == 1) {
-    sprintf(command, "l %d", number);
-  } else if (sscanf(input, "equal %d%c", &number, &checkChar) == 1) {
-    sprintf(command, "e %d", number);
-  } else if (strcmp(input, "exit") == 0) {
-    strcpy(command, "exit");
-  } else {
-    strcpy(command, "i");
-  }
-  if (number < 0 || strlen(input) > 22) {
-    strcpy(command, "i");
-  }
-  return command;
-}
+char *parse_client_input(const char *input);
 
 /**
  * @brief Parses the server's single character responses into human-readable
@@ -91,26 +44,7 @@ char *parse_client_input(const char *input) {
  * @param response Character response from server.
  * @return Human-readable string describing the server's response.
  */
-char *parse_server_response(char response) {
-  switch (response) {
-    case 'c':
-      return "Correct guess.";
-    case 'i':
-      return "Incorrect guess.";
-    case 'v':
-      return "Victory!";
-    case 'd':
-      return "Defeat.";
-    case 'f':
-      return "Incorrect question format.";
-    case 'q':
-      return "Invalid question.";
-    case 'o':
-      return "Out of attempts.";
-    default:
-      return "Unknown response.";
-  }
-}
+char *parse_server_response(char response);
 
 /**
  * @brief Displays the current state of the game including user inputs and
@@ -123,21 +57,7 @@ char *parse_server_response(char response) {
  * @param last_response The last response received from the server.
  */
 void display_game_state(const char *username, int attempts, int min, int max,
-                        const char *last_input, const char *last_response) {
-  printf("\033[2J\033[H");
-  printf("\033[1;31mWelcome to the number guessing game!\033[0m\n");
-  printf("\033[1;30mCommands:\033[0m\n");
-  printf("\033[1;30mgreater than <positive integer>\033[0m\n");
-  printf("\033[1;30mlower than <positive integer>\033[0m\n");
-  printf("\033[1;30mequal <positive integer>\033[0m\n");
-  printf("\033[1;34mUsername: %.10s\033[0m\n", username);
-  printf("\033[1;32mAttempts remaining: %3d\033[0m\n", attempts);
-  printf("\033[1;35mRange: %d - %d\033[0m\n", min, max);
-  printf("\033[1;33mLast Input: %s\033[0m\n", last_input);
-  printf("\033[1;33mLast Server Response: %s\033[0m\n", last_response);
-  printf("\033[1;33m----------------------------------------\033[0m\n");
-  printf("\033[1;36mEnter your guess or command: \033[0m");
-}
+                        const char *last_input, const char *last_response);
 
 /**
  * @brief Main loop for the game, handling input, output, and communication with
@@ -148,45 +68,7 @@ void display_game_state(const char *username, int attempts, int min, int max,
  * @param max Maximum value in the number range.
  * @param name User's name.
  */
-void game_loop(int sock, int attempts, int min, int max, char *name[]) {
-  char buffer[BUFFER_SIZE];
-  char input[BUFFER_SIZE];
-  char last_input[BUFFER_SIZE] = "";
-  char last_response[BUFFER_SIZE] = "";
-
-  while (true) {
-    display_game_state(*name, attempts, min, max, last_input, last_response);
-    fgets(input, BUFFER_SIZE, stdin);
-    input[strcspn(input, "\n")] = 0;
-    char *parsed_input = parse_client_input(input);
-    if (strcmp(parsed_input, "exit") == 0) {
-      break;
-    }
-
-    strcpy(last_input, input);
-    if (strcmp(parsed_input, "i") == 0) {
-      sprintf(last_response, "Invalid input");
-      continue;
-    }
-
-    send(sock, parsed_input, strlen(parsed_input), 0);
-
-    int valread = recv(sock, buffer, 1, 0);
-    if (valread == 0 || valread == -1) {
-      printf("Server disconnected\n");
-      break;
-    }
-    if (buffer[0] == 'c' || buffer[0] == 'i') {
-      attempts--;
-    }
-    strcpy(last_response, parse_server_response(buffer[0]));
-
-    if (strncmp(buffer, "v", 1) == 0 || strncmp(buffer, "d", 1) == 0) {
-      printf("%s\n", parse_server_response(buffer[0]));
-      break;
-    }
-  }
-}
+void game_loop(int sock, int attempts, int min, int max, char *name[]);
 
 /**
  * @brief Main function for the client application.
@@ -245,6 +127,136 @@ int main(int argc, char *argv[]) {
 
   close(sock);
   return 0;
+}
+
+bool parse_and_validate_args(int argc, char *argv[], char **host, int *port,
+                             char **name) {
+  for (int i = 1; i < argc; i++) {
+    if (strcmp(argv[i], "-h") == 0) {
+      *host = argv[i + 1];
+    } else if (strcmp(argv[i], "-p") == 0) {
+      *port = atoi(argv[i + 1]);
+    } else if (strcmp(argv[i], "-n") == 0) {
+      *name = argv[i + 1];
+    }
+  }
+
+  if (*host == NULL) *host = "127.0.0.1";
+  if (*port == 0) *port = PORT;
+  if (*name == NULL) {
+    printf("Usage: %s -h <host> -p <port> -n <name>\n", argv[0]);
+    return false;
+  }
+  if (*port < 1024 || *port > 65535) {
+    printf("Port must be in range 1024-65535\n");
+    return false;
+  }
+  if (strlen(*name) > 255) {
+    printf("Name must be less than 255 characters\n");
+    return false;
+  }
+
+  return true;
+}
+
+char *parse_client_input(const char *input) {
+  static char command[100];
+  int number;
+  char checkChar;
+
+  if (sscanf(input, "greater than %d%c", &number, &checkChar) == 1) {
+    sprintf(command, "g %d", number);
+  } else if (sscanf(input, "less than %d%c", &number, &checkChar) == 1) {
+    sprintf(command, "l %d", number);
+  } else if (sscanf(input, "equal %d%c", &number, &checkChar) == 1) {
+    sprintf(command, "e %d", number);
+  } else if (strcmp(input, "exit") == 0) {
+    strcpy(command, "exit");
+  } else {
+    strcpy(command, "i");
+  }
+  if (number < 0 || strlen(input) > 22) {
+    strcpy(command, "i");
+  }
+  return command;
+}
+
+char *parse_server_response(char response) {
+  switch (response) {
+    case 'c':
+      return "Correct guess.";
+    case 'i':
+      return "Incorrect guess.";
+    case 'v':
+      return "Victory!";
+    case 'd':
+      return "Defeat.";
+    case 'f':
+      return "Incorrect question format.";
+    case 'q':
+      return "Invalid question.";
+    case 'o':
+      return "Out of attempts.";
+    default:
+      return "Unknown response.";
+  }
+}
+
+void display_game_state(const char *username, int attempts, int min, int max,
+                        const char *last_input, const char *last_response) {
+  printf("\033[2J\033[H");
+  printf("\033[1;31mWelcome to the number guessing game!\033[0m\n");
+  printf("\033[1;30mCommands:\033[0m\n");
+  printf("\033[1;30mgreater than <positive integer>\033[0m\n");
+  printf("\033[1;30mlower than <positive integer>\033[0m\n");
+  printf("\033[1;30mequal <positive integer>\033[0m\n");
+  printf("\033[1;34mUsername: %.10s\033[0m\n", username);
+  printf("\033[1;32mAttempts remaining: %3d\033[0m\n", attempts);
+  printf("\033[1;35mRange: %d - %d\033[0m\n", min, max);
+  printf("\033[1;33mLast Input: %s\033[0m\n", last_input);
+  printf("\033[1;33mLast Server Response: %s\033[0m\n", last_response);
+  printf("\033[1;33m----------------------------------------\033[0m\n");
+  printf("\033[1;36mEnter your guess or command: \033[0m");
+}
+
+void game_loop(int sock, int attempts, int min, int max, char *name[]) {
+  char buffer[BUFFER_SIZE];
+  char input[BUFFER_SIZE];
+  char last_input[BUFFER_SIZE] = "";
+  char last_response[BUFFER_SIZE] = "";
+
+  while (true) {
+    display_game_state(*name, attempts, min, max, last_input, last_response);
+    fgets(input, BUFFER_SIZE, stdin);
+    input[strcspn(input, "\n")] = 0;
+    char *parsed_input = parse_client_input(input);
+    if (strcmp(parsed_input, "exit") == 0) {
+      break;
+    }
+
+    strcpy(last_input, input);
+    if (strcmp(parsed_input, "i") == 0) {
+      sprintf(last_response, "Invalid input");
+      continue;
+    }
+
+    send(sock, parsed_input, strlen(parsed_input), 0);
+
+    int valread = recv(sock, buffer, 1, 0);
+    if (valread == 0 || valread == -1) {
+      printf("Server disconnected\n");
+      break;
+    }
+    if (buffer[0] == 'c' || buffer[0] == 'i') {
+      attempts--;
+    }
+    strcpy(last_response, parse_server_response(buffer[0]));
+
+    if (strncmp(buffer, "v", 1) == 0 || strncmp(buffer, "d", 1) == 0) {
+      printf("%s\n", parse_server_response(buffer[0]));
+      break;
+    }
+  }
 }
 
 // 1. Клиент отправляет имя
