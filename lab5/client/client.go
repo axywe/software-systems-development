@@ -20,98 +20,112 @@ type Server struct {
 func (s *Server) serveForm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, `
-		<!DOCTYPE html>
-		<html>
-		<head>
-			<title>Equation Solver</title>
-			<style>
-			body {
-				font-family: Arial, sans-serif;
-				background-color: #f4f4f9;
-				color: #333;
-				padding: 20px;
-			}
-			
-			form {
-				background-color: #ffffff;
-				padding: 20px;
-				border-radius: 8px;
-				box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-				width: fit-content;
-				margin: auto;
-			}
-			
-			#matrix, #constants {
-				display: inline-block;
-				vertical-align: top;
-				margin-right: 20px;
-			}
-			
-			input[type="text"] {
-				width: 40px;
-				margin: 2px;
-				padding: 5px;
-				border: 1px solid #ccc;
-				border-radius: 4px;
-			}
-			
-			input[type="number"] {
-				padding: 5px;
-				border-radius: 4px;
-				border: 1px solid #ccc;
-			}
-			
-			input[type="submit"] {
-				background-color: #4CAF50;
-				color: white;
-				border: none;
-				padding: 10px 20px;
-				text-align: center;
-				text-decoration: none;
-				display: block;
-				font-size: 16px;
-				margin: 10px auto;
-				cursor: pointer;
-				border-radius: 4px;
-			}
-			
-			label {
-				font-weight: bold;
-			}
-			
-		</style>
-			<script>
-				function updateFields() {
-					var size = document.getElementById('size').value;
-					var matrix = document.getElementById('matrix');
-					var constants = document.getElementById('constants');
-					var newSize = parseInt(size);
-					if (!isNaN(newSize)) {
-						var matrixHTML = '';
-						var constantsHTML = '';
-						for (var i = 0; i < newSize; i++) {
-							for (var j = 0; j < newSize; j++) {
-								matrixHTML += '<input type="text" required name="m' + i + '_' + j + '" style="width: 40px;"/>';
-							}
-							matrixHTML += '<br/>';
-							constantsHTML += '<input type="text" required name="c' + i + '" style="width: 40px;"/><br/>';
+	<!DOCTYPE html>
+	<html>
+	<head>
+		<title>Equation Solver</title>
+		<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: #f4f4f9;
+			color: #333;
+			padding: 20px;
+		}
+		
+		form {
+			background-color: #ffffff;
+			padding: 20px;
+			border-radius: 8px;
+			box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+			width: fit-content;
+			margin: auto;
+		}
+		
+		#matrix, #constants {
+			display: inline-block;
+			vertical-align: top;
+			margin-right: 20px;
+		}
+		
+		input[type="text"] {
+			width: 40px;
+			margin: 2px;
+			padding: 5px;
+			border: 1px solid #ccc;
+			border-radius: 4px;
+		}
+		
+		input[type="number"] {
+			padding: 5px;
+			border-radius: 4px;
+			border: 1px solid #ccc;
+		}
+		
+		input[type="submit"], input[type="button"] {
+			background-color: #4CAF50;
+			color: white;
+			border: none;
+			padding: 10px 20px;
+			text-align: center;
+			text-decoration: none;
+			display: block;
+			font-size: 16px;
+			margin: 10px auto;
+			cursor: pointer;
+			border-radius: 4px;
+		}
+		
+		label {
+			font-weight: bold;
+		}
+		
+	</style>
+		<script>
+			function updateFields() {
+				var size = document.getElementById('size').value;
+				var matrix = document.getElementById('matrix');
+				var constants = document.getElementById('constants');
+				var newSize = parseInt(size);
+				if (!isNaN(newSize)) {
+					var matrixHTML = '';
+					var constantsHTML = '';
+					for (var i = 0; i < newSize; i++) {
+						for (var j = 0; j < newSize; j++) {
+							matrixHTML += '<input type="text" required name="m' + i + '_' + j + '" style="width: 40px;"/>';
 						}
-						matrix.innerHTML = matrixHTML;
-						constants.innerHTML = constantsHTML;
+						matrixHTML += '<br/>';
+						constantsHTML += '<input type="text" required name="c' + i + '" style="width: 40px;"/><br/>';
+					}
+					matrix.innerHTML = matrixHTML;
+					constants.innerHTML = constantsHTML;
+				}
+			}
+	
+			function fillRandom() {
+				var size = document.getElementById('size').value;
+				var newSize = parseInt(size);
+				if (!isNaN(newSize)) {
+					for (var i = 0; i < newSize; i++) {
+						for (var j = 0; j < newSize; j++) {
+							document.getElementsByName('m' + i + '_' + j)[0].value = Math.floor(Math.random() * 21 - 10);
+						}
+						document.getElementsByName('c' + i)[0].value = Math.floor(Math.random() * 21 - 10);
 					}
 				}
-			</script>
-		</head>
-		<body>
-			<form action="/solve" method="post">
-				<label for="size">Matrix Size:</label>
-				<input type="number" id="size" name="size" oninput="updateFields()" min="1"/><br/>
-				<div id="matrix"></div>
-				<div id="constants"></div><br>
-				<input type="submit" value="Solve"/>
-			</form>
-		</body>
-		</html>
+			}
+		</script>
+	</head>
+	<body>
+		<form action="/solve" method="post">
+			<label for="size">Matrix Size:</label>
+			<input type="number" id="size" name="size" oninput="updateFields()" min="1"/><br/>
+			<div id="matrix"></div>
+			<div id="constants"></div><br>
+			<input type="button" value="Fill Random" onclick="fillRandom()"/>
+			<input type="submit" value="Solve"/>
+		</form>
+	</body>
+	</html>	
 	`)
 }
 
