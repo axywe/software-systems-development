@@ -1,10 +1,11 @@
 /**
  * @file client.c
- * @brief Client for a "Guess the Number" game, interacting with a game server using TCP/IP protocol.
+ * @brief Client for a "Guess the Number" game, interacting with a game server
+ * using TCP/IP protocol.
  *
- * This client program interacts with a game server to play a simple "Guess the Number" game.
- * It uses TCP/IP sockets to send guesses and receive responses, and provides a text-based
- * interface for the user to play the game.
+ * This client program interacts with a game server to play a simple "Guess the
+ * Number" game. It uses TCP/IP sockets to send guesses and receive responses,
+ * and provides a text-based interface for the user to play the game.
  */
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -17,7 +18,6 @@
 
 #define BUFFER_SIZE 256
 #define PORT 8080
-
 
 /**
  * @brief Parses and validates command line arguments.
@@ -40,10 +40,8 @@ bool parse_and_validate_args(int argc, char *argv[], char **host, int *port,
     }
   }
 
-  if (*host == NULL)
-    *host = "127.0.0.1";
-  if (*port == 0)
-    *port = PORT;
+  if (*host == NULL) *host = "127.0.0.1";
+  if (*port == 0) *port = PORT;
   if (*name == NULL) {
     printf("Usage: %s -h <host> -p <port> -n <name>\n", argv[0]);
     return false;
@@ -88,33 +86,35 @@ char *parse_client_input(const char *input) {
 }
 
 /**
- * @brief Parses the server's single character responses into human-readable strings.
+ * @brief Parses the server's single character responses into human-readable
+ * strings.
  * @param response Character response from server.
  * @return Human-readable string describing the server's response.
  */
 char *parse_server_response(char response) {
   switch (response) {
-  case 'c':
-    return "Correct guess.";
-  case 'i':
-    return "Incorrect guess.";
-  case 'v':
-    return "Victory!";
-  case 'd':
-    return "Defeat.";
-  case 'f':
-    return "Incorrect question format.";
-  case 'q':
-    return "Invalid question.";
-  case 'o':
-    return "Out of attempts.";
-  default:
-    return "Unknown response.";
+    case 'c':
+      return "Correct guess.";
+    case 'i':
+      return "Incorrect guess.";
+    case 'v':
+      return "Victory!";
+    case 'd':
+      return "Defeat.";
+    case 'f':
+      return "Incorrect question format.";
+    case 'q':
+      return "Invalid question.";
+    case 'o':
+      return "Out of attempts.";
+    default:
+      return "Unknown response.";
   }
 }
 
 /**
- * @brief Displays the current state of the game including user inputs and server responses.
+ * @brief Displays the current state of the game including user inputs and
+ * server responses.
  * @param username The user's name.
  * @param attempts The number of attempts remaining.
  * @param min The minimum number in the guessing range.
@@ -124,7 +124,7 @@ char *parse_server_response(char response) {
  */
 void display_game_state(const char *username, int attempts, int min, int max,
                         const char *last_input, const char *last_response) {
-  printf("\033[2J\033[H"); 
+  printf("\033[2J\033[H");
   printf("\033[1;31mWelcome to the number guessing game!\033[0m\n");
   printf("\033[1;30mCommands:\033[0m\n");
   printf("\033[1;30mgreater than <positive integer>\033[0m\n");
@@ -140,7 +140,8 @@ void display_game_state(const char *username, int attempts, int min, int max,
 }
 
 /**
- * @brief Main loop for the game, handling input, output, and communication with the server.
+ * @brief Main loop for the game, handling input, output, and communication with
+ * the server.
  * @param sock Socket descriptor connected to the server.
  * @param attempts Number of attempts given to guess the number.
  * @param min Minimum value in the number range.

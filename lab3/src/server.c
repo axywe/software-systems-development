@@ -1,12 +1,13 @@
 /**
  * @file server.c
- * @brief Server for a "Guess the Number" game, handling multiple clients with a TCP/IP protocol.
+ * @brief Server for a "Guess the Number" game, handling multiple clients with a
+ * TCP/IP protocol.
  *
- * This server program implements the game logic for a simple "Guess the Number" game, which
- * can be played by multiple clients simultaneously. It uses TCP/IP sockets to communicate with
- * clients, and handles each client's game state independently.
+ * This server program implements the game logic for a simple "Guess the Number"
+ * game, which can be played by multiple clients simultaneously. It uses TCP/IP
+ * sockets to communicate with clients, and handles each client's game state
+ * independently.
  */
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -49,7 +50,6 @@ typedef struct {
   int attempts;
 } ClientData;
 
-
 /**
  * @struct GameData
  * @brief Holds configuration data for the game.
@@ -81,14 +81,15 @@ typedef struct {
  * @param server_fd Socket descriptor for the server.
  * @param address Struct containing address information of the server.
  * @param client_data Pointer to the array of client data structures.
- * @param client_capacity Pointer to the current capacity of the client data array.
+ * @param client_capacity Pointer to the current capacity of the client data
+ * array.
  * @param gameData Pointer to the game configuration data.
  * @return The socket descriptor of the newly accepted client or -1 on failure.
  */
 int acceptNewClient(int server_fd, struct sockaddr_in address,
                     ClientData **client_data, int *client_capacity,
                     GameData *gameData);
-            
+
 /**
  * @brief Initializes the client data for new or expanding client arrays.
  * @param client_data Pointer to the client data array.
@@ -123,7 +124,6 @@ void handleClientActivity(int sd, ClientData *client_data,
  * @return 0 on success, -1 on failure.
  */
 int readData(const char *filename, int *seed, int *port, GameData *gameData);
-
 
 /**
  * @brief Main function to execute the server logic.
@@ -286,10 +286,11 @@ int acceptNewClient(int server_fd, struct sockaddr_in address,
           (*client_data)[i].min +
           rand() % ((*client_data)[i].max - (*client_data)[i].min + 1);
       strncpy((*client_data)[i].name, name, valread);
-      printf("Adding to list of sockets as %d with secret number %d, range: %d "
-             "- %d\n",
-             i, (*client_data)[i].secretNumber, (*client_data)[i].min,
-             (*client_data)[i].max);
+      printf(
+          "Adding to list of sockets as %d with secret number %d, range: %d "
+          "- %d\n",
+          i, (*client_data)[i].secretNumber, (*client_data)[i].min,
+          (*client_data)[i].max);
       added = i;
       break;
     }
@@ -315,10 +316,11 @@ int acceptNewClient(int server_fd, struct sockaddr_in address,
         rand() % ((*client_data)[i].max - (*client_data)[i].min + 1);
     strncpy((*client_data)[i].name, name, valread);
     printf("Resized client data to %d\n", *client_capacity);
-    printf("Adding to list of sockets as %d with secret number %d, range: %d - "
-           "%d\n",
-           i, (*client_data)[i].secretNumber, (*client_data)[i].min,
-           (*client_data)[i].max);
+    printf(
+        "Adding to list of sockets as %d with secret number %d, range: %d - "
+        "%d\n",
+        i, (*client_data)[i].secretNumber, (*client_data)[i].min,
+        (*client_data)[i].max);
     added = i;
   }
 
@@ -431,7 +433,6 @@ void handleClientActivity(int sd, ClientData *client_data,
     }
   }
 }
-
 
 int readData(const char *filename, int *seed, int *port, GameData *gameData) {
   FILE *file = fopen(filename, "r");
