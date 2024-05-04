@@ -1,0 +1,22 @@
+/* Модуль для приложения "Сота" */
+module Cell {
+  /* Интерфейс обратного вызова трубки */
+  interface TubeCallback {
+    void receiveFile(in string fromNum, in string fileContent);
+    /* Принять сообщение message от номера fromNum */
+    long sendSMS (in string fromNum, in string message);
+    /* Вернуть свой номер */
+    string getNum();
+    };
+
+  /* Интерфейс базовой станции */
+  interface Station {
+    /* Зарегистрировать трубку с номером phoneNum, */
+    /* для обратного вызова трубки использовать ссылку TubeCallback */
+    long register (in TubeCallback objRef, in string phoneNum);
+    /* Отправить сообщение message от номера fromNum к номеру toNum */
+    long sendSMS (in string fromNum, in string toNum, in string message);
+    long sendFile(in string fromNum, in string toNum, in string fileContent);
+    };
+};
+

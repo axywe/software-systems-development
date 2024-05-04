@@ -15,6 +15,6 @@ This repository contains my laboratory works for the course "Software Systems De
 
 | Laboratory       | Lab 1 | Lab 2 | Lab 3 | Lab 4 | Lab 5 | Lab 6 |
 |------------------|-------|-------|-------|-------|-------|-------|
-| Program Points   |   5   |   3   |   -   |   -   |   -   |   -   |
-| Theory Points    |   3   |   5   |   -   |   -   |   -   |   -   |
-| Report Points    |   5   |   3   |   -   |   -   |   -   |   -   |
+| Program Points   |   5   |   3   |   10  |   -   |   5   |   5   |
+| Theory Points    |   3   |   5   |   10  |   -   |   -   |   -   |
+| Report Points    |   5   |   3   |   10  |   -   |   -   |   -   |
